@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner-IOS</title>
+    <style>
+        /* Reset and general styling */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        /* Center container */
+        .scanner-container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Video feed styling */
+        #video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #007BFF;
+            border-radius: 10px;
+        }
+
+        /* Text styling */
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+
+        #result {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #555;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 20px;
+            }
+            #result {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanner-container">
+        <h1>QR Code Scanner</h1>
+        <video id="video" autoplay></video>
+        <p id="result">Scan a QR code to get started...</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr"></script>
+    <script>
+        const video = document.getElementById('video');
+        const result = document.getElementById('result');
+        const canvas = document.createElement('canvas'); // Create canvas dynamically
+        const context = canvas.getContext('2d');
+
+        // Access the user's camera
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true); // iOS compatibility
+                video.play();
+                scan(); // Start scanning for QR codes
+            })
+            .catch(err => {
+                console.error('Camera access error:', err);
+                result.textContent = 'Error accessing the camera. Please allow permissions.';
+            });
+
+        // Scanning for QR codes
+        function scan() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code) {
+                    result.textContent = `Redirecting to: ${code.data}`;
+                    window.location.href = code.data; // Redirect to the scanned URL
+                    return; // Stop scanning
+                }
+            }
+            requestAnimationFrame(scan); // Keep scanning
+        }
+    </script>
+</body>
+</html>
